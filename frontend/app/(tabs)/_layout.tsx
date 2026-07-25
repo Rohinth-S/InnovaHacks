@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { BRAND_COLORS } from '../../constants/colors';
-import { View } from 'react-native';
+import { UI } from '../../constants/colors';
+import { View, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 export default function TabLayout() {
@@ -8,30 +8,59 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: BRAND_COLORS.teal,
-        tabBarInactiveTintColor: BRAND_COLORS.slateMuted,
+        tabBarActiveTintColor: UI.accent,
+        tabBarInactiveTintColor: UI.fg40,
         tabBarLabelStyle: {
-          fontWeight: '300',
+          fontWeight: '600',
           fontSize: 10,
+          fontFamily: 'Manrope_600SemiBold',
+          letterSpacing: 0.3,
         },
         tabBarStyle: {
-          backgroundColor: BRAND_COLORS.cream,
+          backgroundColor: Platform.OS === 'web'
+            ? 'rgba(250, 249, 246, 0.90)'
+            : UI.background,
           borderTopWidth: 1,
-          borderTopColor: BRAND_COLORS.border,
-          height: 76,
-          paddingBottom: 10,
+          borderTopColor: UI.fg08,
+          height: 80,
+          paddingBottom: 12,
           paddingTop: 12,
+          ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } as any : {}),
         },
       }}
     >
       <Tabs.Screen
+        name="community"
+        options={{
+          title: 'Explore',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center' }}>
+              {focused && (
+                <View style={{
+                  width: 20, height: 3, borderRadius: 1.5,
+                  backgroundColor: UI.accent,
+                  position: 'absolute', top: -8,
+                }} />
+              )}
+              <Feather name="compass" size={22} color={color} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
-          title: 'HOME',
+          title: 'Ask',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center">
-              {focused && <View className="w-1 h-1 bg-brand-teal rounded-full absolute -top-2" />}
-              <Feather name="home" size={20} color={color} />
+            <View style={{ alignItems: 'center' }}>
+              {focused && (
+                <View style={{
+                  width: 20, height: 3, borderRadius: 1.5,
+                  backgroundColor: UI.accent,
+                  position: 'absolute', top: -8,
+                }} />
+              )}
+              <Feather name="search" size={22} color={color} />
             </View>
           ),
         }}
@@ -39,23 +68,17 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'HISTORY',
+          title: 'Journey',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center">
-              {focused && <View className="w-1 h-1 bg-brand-teal rounded-full absolute -top-2" />}
-              <Feather name="clock" size={20} color={color} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="community"
-        options={{
-          title: 'COMMUNITY',
-          tabBarIcon: ({ color, focused }) => (
-            <View className="items-center">
-              {focused && <View className="w-1 h-1 bg-brand-teal rounded-full absolute -top-2" />}
-              <Feather name="users" size={20} color={color} />
+            <View style={{ alignItems: 'center' }}>
+              {focused && (
+                <View style={{
+                  width: 20, height: 3, borderRadius: 1.5,
+                  backgroundColor: UI.accent,
+                  position: 'absolute', top: -8,
+                }} />
+              )}
+              <Feather name="map" size={22} color={color} />
             </View>
           ),
         }}
@@ -63,11 +86,17 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'PROFILE',
+          title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center">
-              {focused && <View className="w-1 h-1 bg-brand-teal rounded-full absolute -top-2" />}
-              <Feather name="user" size={20} color={color} />
+            <View style={{ alignItems: 'center' }}>
+              {focused && (
+                <View style={{
+                  width: 20, height: 3, borderRadius: 1.5,
+                  backgroundColor: UI.accent,
+                  position: 'absolute', top: -8,
+                }} />
+              )}
+              <Feather name="user" size={22} color={color} />
             </View>
           ),
         }}
