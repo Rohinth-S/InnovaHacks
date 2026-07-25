@@ -3,40 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { updateProfile } from '../../api/auth.api';
-
-const C = {
-  bg: '#050505',
-  surface: '#0e0e0e',
-  card: '#141414',
-  white: '#FFFFFF',
-  offWhite: '#e0e0e0',
-  gray: '#888888',
-  dimGray: '#555555',
-  border: '#1e1e1e',
-  gridLine: '#262626',
-  accent: '#3a3a3a',
-};
+import { L } from '../../constants/colors';
 
 const MOCK_USER = {
   reputationScore: 72,
 };
-
-// Soft spotlight glow
-function SoftGlow({ top, left, right, bottom, size, opacity = 0.04 }: any) {
-  return (
-    <View style={{
-      position: 'absolute',
-      top, left, right, bottom,
-      width: size, height: size,
-      borderRadius: size / 2,
-      backgroundColor: '#ffffff',
-      opacity,
-      // @ts-ignore - web specific styling
-      filter: 'blur(100px)',
-    }} />
-  );
-}
-
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -76,95 +47,89 @@ export default function ProfilePage() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: L.background }}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
-        <View style={{ paddingTop: 64, paddingBottom: 48, alignItems: 'center', overflow: 'hidden', backgroundColor: C.bg }}>
-          
-          {/* Subtle glow behind avatar */}
-          <SoftGlow size={400} top={-100} opacity={0.03} />
-
+        <View style={{ paddingTop: 56, paddingBottom: 40, alignItems: 'center', backgroundColor: L.background }}>
           {/* Avatar */}
           <View style={{
             width: 96, height: 96, borderRadius: 48,
-            borderWidth: 1.5, borderColor: C.border,
-            backgroundColor: C.surface,
+            backgroundColor: L.tealTint,
+            borderWidth: 2, borderColor: L.teal,
             alignItems: 'center', justifyContent: 'center',
-            marginBottom: 20,
-            zIndex: 1,
+            marginBottom: 16,
           }}>
-            <Text style={{ fontSize: 38, fontWeight: '700', color: C.white }}>
+            <Text style={{ fontSize: 38, fontWeight: '700', color: L.teal }}>
               {username[0].toUpperCase()}
             </Text>
           </View>
 
-          <Text style={{ fontSize: 26, fontWeight: '700', color: C.white, letterSpacing: -0.5, marginBottom: 12, zIndex: 1 }}>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: L.navy, letterSpacing: -0.5, marginBottom: 10 }}>
             @{username}
           </Text>
 
           {/* Reputation pill */}
           <View style={{
             flexDirection: 'row', alignItems: 'center',
-            borderWidth: 1, borderColor: C.border,
-            paddingHorizontal: 14, paddingVertical: 6,
-            borderRadius: 20,
-            backgroundColor: C.surface,
-            zIndex: 1,
+            backgroundColor: L.surface, borderWidth: 1, borderColor: L.border,
+            paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
           }}>
-            <Text style={{ fontSize: 13, color: C.dimGray, fontWeight: '500', marginRight: 6 }}>reputation</Text>
-            <Text style={{ fontSize: 15, color: C.white, fontWeight: '700' }}>{MOCK_USER.reputationScore}</Text>
+            <Text style={{ fontSize: 12, color: L.navySoft, fontWeight: '500', marginRight: 6 }}>reputation</Text>
+            <Text style={{ fontSize: 15, color: L.navy, fontWeight: '700' }}>{MOCK_USER.reputationScore}</Text>
           </View>
         </View>
 
 
-        {/* ── Details Card ── */}
-        <View style={{ paddingHorizontal: 24, paddingVertical: 40, backgroundColor: C.surface }}>
-          <View style={{ position: 'absolute', top: 0, left: 32, right: 32, height: 1, backgroundColor: C.border }} />
+        {/* ── Divider ── */}
+        <View style={{ height: 1, backgroundColor: L.border, marginHorizontal: 24 }} />
 
+
+        {/* ── Details Card ── */}
+        <View style={{ paddingHorizontal: 24, paddingVertical: 32 }}>
           <View style={{
-            borderWidth: 1, borderColor: C.border,
-            borderRadius: 16, padding: 28,
-            backgroundColor: C.card,
+            backgroundColor: L.surface, borderWidth: 1, borderColor: L.border,
+            borderRadius: 16, padding: 24,
+            shadowColor: '#152238', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 20,
           }}>
             {/* Header */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: C.white }}>Details</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: L.navy }}>Details</Text>
               <TouchableOpacity
                 onPress={() => setIsEditing(!isEditing)}
-                style={{ borderWidth: 1, borderColor: C.border, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: C.surface }}
+                style={{ backgroundColor: L.tealTint, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 }}
               >
-                <Text style={{ color: C.gray, fontWeight: '600', fontSize: 13 }}>
+                <Text style={{ color: L.teal, fontWeight: '600', fontSize: 13 }}>
                   {isEditing ? 'Cancel' : 'Edit'}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Username */}
-            <View style={{ marginBottom: 24 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: C.dimGray, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: L.teal, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
                 Username
               </Text>
               {isEditing ? (
                 <TextInput
                   style={{
-                    borderWidth: 1, borderColor: C.accent,
-                    borderRadius: 10, padding: 14,
-                    color: C.white, fontWeight: '600', fontSize: 15,
-                    backgroundColor: C.surface,
+                    borderWidth: 1, borderColor: L.border,
+                    borderRadius: 12, padding: 14,
+                    color: L.navy, fontWeight: '600', fontSize: 15,
+                    backgroundColor: L.background,
                   }}
                   value={username}
                   onChangeText={setUsername}
-                  placeholderTextColor={C.dimGray}
+                  placeholderTextColor={L.navySoft}
                 />
               ) : (
-                <Text style={{ fontSize: 16, fontWeight: '500', color: C.white }}>{username}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '500', color: L.navy }}>{username}</Text>
               )}
             </View>
 
             {/* Language */}
             <View style={{ marginBottom: 4 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: C.dimGray, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: L.teal, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>
                 Language
               </Text>
               {isEditing ? (
@@ -178,11 +143,11 @@ export default function ProfilePage() {
                         style={{
                           paddingHorizontal: 18, paddingVertical: 10,
                           borderRadius: 20, borderWidth: 1,
-                          backgroundColor: sel ? C.white : C.surface,
-                          borderColor: sel ? C.white : C.border,
+                          backgroundColor: sel ? L.teal : L.background,
+                          borderColor: sel ? L.teal : L.border,
                         }}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: sel ? C.bg : C.dimGray }}>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: sel ? '#FFFFFF' : L.navySoft }}>
                           {lang.label}
                         </Text>
                       </TouchableOpacity>
@@ -190,7 +155,7 @@ export default function ProfilePage() {
                   })}
                 </View>
               ) : (
-                <Text style={{ fontSize: 16, fontWeight: '500', color: C.white }}>
+                <Text style={{ fontSize: 16, fontWeight: '500', color: L.navy }}>
                   {languages.find(l => l.code === languageCode)?.label || languageCode}
                 </Text>
               )}
@@ -202,14 +167,14 @@ export default function ProfilePage() {
                 onPress={handleSave}
                 disabled={isSubmitting}
                 style={{
-                  backgroundColor: C.white, paddingVertical: 14,
-                  borderRadius: 10, alignItems: 'center', marginTop: 24,
+                  backgroundColor: L.terracotta, paddingVertical: 14,
+                  borderRadius: 28, alignItems: 'center', marginTop: 20,
                 }}
               >
                 {isSubmitting ? (
-                  <ActivityIndicator color={C.bg} />
+                  <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={{ color: C.bg, fontWeight: '600', fontSize: 15 }}>Save Changes</Text>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15 }}>Save Changes</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -218,42 +183,35 @@ export default function ProfilePage() {
 
 
         {/* ── Action Buttons ── */}
-        <View style={{ paddingHorizontal: 24, paddingVertical: 48, gap: 14, backgroundColor: C.bg, overflow: 'hidden' }}>
-          <View style={{ position: 'absolute', top: 0, left: 32, right: 32, height: 1, backgroundColor: C.border }} />
-
-          <SoftGlow size={500} bottom={-200} left={-150} opacity={0.02} />
-          
+        <View style={{ paddingHorizontal: 24, gap: 12, marginBottom: 48 }}>
           <TouchableOpacity
             onPress={() => router.push('/share-journey')}
             style={{
-              paddingVertical: 16, borderRadius: 12,
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-              borderWidth: 1, borderColor: C.accent,
-              backgroundColor: C.surface,
-              zIndex: 1,
+              paddingVertical: 16, borderRadius: 28,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: L.teal,
             }}
           >
-            <Text style={{ color: C.white, fontWeight: '600', fontSize: 15 }}>Share / Update Journey</Text>
+            <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 15 }}>Share / Update Journey</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/full-journey')}
             style={{
-              paddingVertical: 16, borderRadius: 12,
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-              borderWidth: 1, borderColor: C.border,
-              backgroundColor: C.bg,
-              zIndex: 1,
+              paddingVertical: 16, borderRadius: 28,
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1, borderColor: L.border,
+              backgroundColor: L.surface,
             }}
           >
-            <Text style={{ color: C.dimGray, fontWeight: '500', fontSize: 15 }}>View Full Journey</Text>
+            <Text style={{ color: L.navy, fontWeight: '500', fontSize: 15 }}>View Full Journey</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSignOut}
-            style={{ paddingVertical: 16, alignItems: 'center', marginTop: 8, zIndex: 1 }}
+            style={{ paddingVertical: 16, alignItems: 'center', marginTop: 8 }}
           >
-            <Text style={{ color: C.dimGray, fontWeight: '500', fontSize: 13 }}>Sign Out</Text>
+            <Text style={{ color: L.navySoft, fontWeight: '500', fontSize: 13 }}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
