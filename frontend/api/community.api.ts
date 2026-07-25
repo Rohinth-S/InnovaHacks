@@ -2,12 +2,17 @@ import { apiFetch } from "./api";
 
 export interface SearchCommunityUser {
   username: string;
-  summary: string | null;
-  expertiseAreas: string[] | null;
+  avatarUrl?: string | null;
   reputationScore: number;
-  matchingGoalCount: number;
-  matchingGoalTitles: string[];
-  journeyHighlights: string[];
+  topics: string[];
+  subtopics: string[];
+  experienceCount: number;
+  latestExperience: {
+    title: string;
+    timelineSummary: string;
+    organization: string;
+    isVerified: boolean;
+  } | null;
 }
 
 export interface CommunityJourney {
