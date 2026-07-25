@@ -1,12 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { updateProfile } from '../../api/auth.api';
 
+const C = {
+  bg: '#050505',
+  surface: '#0e0e0e',
+  card: '#141414',
+  white: '#FFFFFF',
+  offWhite: '#e0e0e0',
+  gray: '#888888',
+  dimGray: '#555555',
+  border: '#1e1e1e',
+  gridLine: '#262626',
+  accent: '#3a3a3a',
+};
+
 const MOCK_USER = {
   reputationScore: 72,
 };
+
+// Soft spotlight glow
+function SoftGlow({ top, left, right, bottom, size, opacity = 0.04 }: any) {
+  return (
+    <View style={{
+      position: 'absolute',
+      top, left, right, bottom,
+      width: size, height: size,
+      borderRadius: size / 2,
+      backgroundColor: '#ffffff',
+      opacity,
+      // @ts-ignore - web specific styling
+      filter: 'blur(100px)',
+    }} />
+  );
+}
+
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -29,11 +59,7 @@ export default function ProfilePage() {
     try {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
-
-      const user = await updateProfile(token, {
-        username,
-        preferredLanguage: languageCode
-      });
+      const user = await updateProfile(token, { username, preferredLanguage: languageCode });
       setUsername(user.username ?? username);
       setLanguageCode(user.preferredLanguage ?? languageCode);
       setIsEditing(false);
@@ -44,126 +70,194 @@ export default function ProfilePage() {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `Check out my professional journey on PathFinder! https://pathfinder.app/u/${username}`,
-      });
-    } catch (error: any) {
-      console.warn(error.message);
-    }
-  };
-
   const handleSignOut = async () => {
     await signOut();
     router.replace('/');
   };
 
   return (
-    <ScrollView className="flex-1 bg-brand-cream px-6 py-8">
-      <View className="items-center mb-8">
-        <View className="w-20 h-20 rounded-full bg-brand-navy items-center justify-center mb-3">
-          <Text className="text-3xl font-extrabold text-brand-white">{username[0].toUpperCase()}</Text>
-        </View>
-        <Text className="text-2xl font-bold text-brand-navy mb-1">@{username}</Text>
-        <View className="flex-row items-center space-x-1">
-          <Text className="text-sm">⭐</Text>
-          <Text className="text-sm text-brand-slate font-medium">Reputation Score: </Text>
-          <Text className="text-base font-extrabold text-brand-rust">{MOCK_USER.reputationScore}</Text>
-        </View>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
 
-      <View className="bg-brand-white rounded-xl p-5 mb-6 border border-brand-border shadow-sm">
-        <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-lg font-bold text-brand-navy">Profile Details</Text>
-          <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
-            <Text className="text-brand-rust font-bold">{isEditing ? 'Cancel' : 'Edit'}</Text>
-          </TouchableOpacity>
-        </View>
+        {/* ── Header ── */}
+        <View style={{ paddingTop: 64, paddingBottom: 48, alignItems: 'center', overflow: 'hidden', backgroundColor: C.bg }}>
+          
+          {/* Subtle glow behind avatar */}
+          <SoftGlow size={400} top={-100} opacity={0.03} />
 
-        <View className="mb-4">
-          <Text className="text-sm font-semibold text-brand-slate mb-1">Username</Text>
-          {isEditing ? (
-            <TextInput
-              className="bg-brand-lightGray rounded-lg p-3 text-brand-navy font-medium border border-brand-border"
-              value={username}
-              onChangeText={setUsername}
-            />
-          ) : (
-            <Text className="text-base font-medium text-brand-navy">{username}</Text>
-          )}
-        </View>
-
-        <View className="mb-2">
-          <Text className="text-sm font-semibold text-brand-slate mb-2">Preferred Language</Text>
-          {isEditing ? (
-            <View className="flex-row flex-wrap gap-2">
-              {languages.map((lang) => (
-                <TouchableOpacity
-                  key={lang.code}
-                  onPress={() => setLanguageCode(lang.code)}
-                  className={`px-3 py-1.5 rounded-full border ${
-                    languageCode === lang.code
-                      ? 'bg-brand-teal border-brand-teal'
-                      : 'bg-brand-white border-brand-border'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      languageCode === lang.code ? 'text-brand-white' : 'text-brand-slate'
-                    }`}
-                  >
-                    {lang.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <Text className="text-base font-medium text-brand-navy">
-              {languages.find(l => l.code === languageCode)?.label || languageCode}
+          {/* Avatar */}
+          <View style={{
+            width: 96, height: 96, borderRadius: 48,
+            borderWidth: 1.5, borderColor: C.border,
+            backgroundColor: C.surface,
+            alignItems: 'center', justifyContent: 'center',
+            marginBottom: 20,
+            zIndex: 1,
+          }}>
+            <Text style={{ fontSize: 38, fontWeight: '700', color: C.white }}>
+              {username[0].toUpperCase()}
             </Text>
-          )}
+          </View>
+
+          <Text style={{ fontSize: 26, fontWeight: '700', color: C.white, letterSpacing: -0.5, marginBottom: 12, zIndex: 1 }}>
+            @{username}
+          </Text>
+
+          {/* Reputation pill */}
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            borderWidth: 1, borderColor: C.border,
+            paddingHorizontal: 14, paddingVertical: 6,
+            borderRadius: 20,
+            backgroundColor: C.surface,
+            zIndex: 1,
+          }}>
+            <Text style={{ fontSize: 13, color: C.dimGray, fontWeight: '500', marginRight: 6 }}>reputation</Text>
+            <Text style={{ fontSize: 15, color: C.white, fontWeight: '700' }}>{MOCK_USER.reputationScore}</Text>
+          </View>
         </View>
-        
-        {isEditing && (
-          <TouchableOpacity 
-            className="bg-brand-teal py-3 rounded-lg items-center mt-4" 
-            onPress={handleSave}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text className="text-brand-white font-bold">Save Changes</Text>
+
+
+        {/* ── Details Card ── */}
+        <View style={{ paddingHorizontal: 24, paddingVertical: 40, backgroundColor: C.surface }}>
+          <View style={{ position: 'absolute', top: 0, left: 32, right: 32, height: 1, backgroundColor: C.border }} />
+
+          <View style={{
+            borderWidth: 1, borderColor: C.border,
+            borderRadius: 16, padding: 28,
+            backgroundColor: C.card,
+          }}>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: C.white }}>Details</Text>
+              <TouchableOpacity
+                onPress={() => setIsEditing(!isEditing)}
+                style={{ borderWidth: 1, borderColor: C.border, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: C.surface }}
+              >
+                <Text style={{ color: C.gray, fontWeight: '600', fontSize: 13 }}>
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Username */}
+            <View style={{ marginBottom: 24 }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: C.dimGray, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>
+                Username
+              </Text>
+              {isEditing ? (
+                <TextInput
+                  style={{
+                    borderWidth: 1, borderColor: C.accent,
+                    borderRadius: 10, padding: 14,
+                    color: C.white, fontWeight: '600', fontSize: 15,
+                    backgroundColor: C.surface,
+                  }}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholderTextColor={C.dimGray}
+                />
+              ) : (
+                <Text style={{ fontSize: 16, fontWeight: '500', color: C.white }}>{username}</Text>
+              )}
+            </View>
+
+            {/* Language */}
+            <View style={{ marginBottom: 4 }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: C.dimGray, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
+                Language
+              </Text>
+              {isEditing ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {languages.map((lang) => {
+                    const sel = languageCode === lang.code;
+                    return (
+                      <TouchableOpacity
+                        key={lang.code}
+                        onPress={() => setLanguageCode(lang.code)}
+                        style={{
+                          paddingHorizontal: 18, paddingVertical: 10,
+                          borderRadius: 20, borderWidth: 1,
+                          backgroundColor: sel ? C.white : C.surface,
+                          borderColor: sel ? C.white : C.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: sel ? C.bg : C.dimGray }}>
+                          {lang.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={{ fontSize: 16, fontWeight: '500', color: C.white }}>
+                  {languages.find(l => l.code === languageCode)?.label || languageCode}
+                </Text>
+              )}
+            </View>
+
+            {/* Save */}
+            {isEditing && (
+              <TouchableOpacity
+                onPress={handleSave}
+                disabled={isSubmitting}
+                style={{
+                  backgroundColor: C.white, paddingVertical: 14,
+                  borderRadius: 10, alignItems: 'center', marginTop: 24,
+                }}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={C.bg} />
+                ) : (
+                  <Text style={{ color: C.bg, fontWeight: '600', fontSize: 15 }}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
             )}
+          </View>
+        </View>
+
+
+        {/* ── Action Buttons ── */}
+        <View style={{ paddingHorizontal: 24, paddingVertical: 48, gap: 14, backgroundColor: C.bg, overflow: 'hidden' }}>
+          <View style={{ position: 'absolute', top: 0, left: 32, right: 32, height: 1, backgroundColor: C.border }} />
+
+          <SoftGlow size={500} bottom={-200} left={-150} opacity={0.02} />
+          
+          <TouchableOpacity
+            onPress={() => router.push('/share-journey')}
+            style={{
+              paddingVertical: 16, borderRadius: 12,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1, borderColor: C.accent,
+              backgroundColor: C.surface,
+              zIndex: 1,
+            }}
+          >
+            <Text style={{ color: C.white, fontWeight: '600', fontSize: 15 }}>Share / Update Journey</Text>
           </TouchableOpacity>
-        )}
-      </View>
 
-      <View className="space-y-3 mb-8">
-        <TouchableOpacity 
-          className="bg-brand-rust py-4 rounded-xl items-center flex-row justify-center space-x-2 shadow-sm"
-          onPress={() => router.push('/share-journey')}
-        >
-          <Text className="text-base">✍️</Text>
-          <Text className="text-brand-white font-bold text-base ml-2">Share / Update Journey</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/full-journey')}
+            style={{
+              paddingVertical: 16, borderRadius: 12,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              borderWidth: 1, borderColor: C.border,
+              backgroundColor: C.bg,
+              zIndex: 1,
+            }}
+          >
+            <Text style={{ color: C.dimGray, fontWeight: '500', fontSize: 15 }}>View Full Journey</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          className="bg-brand-white py-4 rounded-xl items-center flex-row justify-center space-x-2 border-2 border-brand-navy"
-          onPress={() => router.push('/full-journey')}
-        >
-          <Text className="text-base">🗺️</Text>
-          <Text className="text-brand-navy font-bold text-base ml-2">View Full Journey</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSignOut}
+            style={{ paddingVertical: 16, alignItems: 'center', marginTop: 8, zIndex: 1 }}
+          >
+            <Text style={{ color: C.dimGray, fontWeight: '500', fontSize: 13 }}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity 
-          className="bg-brand-tan py-3 rounded-xl items-center mt-4"
-          onPress={handleSignOut}
-        >
-          <Text className="text-brand-navy font-bold text-sm">Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
