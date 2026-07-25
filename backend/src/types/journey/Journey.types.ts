@@ -21,6 +21,14 @@ export type GoalSubtopic =
   | "Other"
   | "Competition";
 
+export type SubmitGoal = {
+  narrative: string;
+  topics: GoalTopic[];
+  subtopics: GoalSubtopic[];
+  status: GoalStatus;
+  startDate: string;
+  endDate?: string | null;
+};
 export type SkillType = "Technical" | "Soft" | "Domain" | "ExtraCurricular";
 
 export type ProofSourceType = "image" | "pdf" | "github" | "link";
@@ -68,14 +76,14 @@ export interface JourneyExperience {
   id: string;
   title: string;
   startDate: string;
-  endDate?: string | null;
+  endDate: string | null;
   context: string;
-  challengeFaced?: string | null;
-  outcome?: string | null;
-  organization?: string | null;
-  applicationStatus?: ApplicationStatus | null;
-  achievements?: string[] | null;
-  isVerified?: boolean;
+  challengeFaced: string | null;
+  outcome: string | null;
+  organization: string | null;
+  applicationStatus: ApplicationStatus | null;
+  achievements: string[] | null;
+  isVerified: boolean;
   goalIds: string[];
   skills: JourneySkill[];
   proofs: JourneyProof[];
