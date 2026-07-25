@@ -16,27 +16,6 @@ import { validateExperienceDuplicate } from "./staticAnalysis/experienceDuplicat
 import { deleteJourneySession } from "../../services/journeySession.service.js";
 import { addExperienceReputation } from "../../services/reputation.service.js";
 import { verifyProof } from "./verifyProof.processor.js";
-import {z} from "zod";
-
-function normalizeJourneyExperience(
-    experience: z.infer<typeof journeyExperienceSchema>
-): JourneyExperience {
-    return {
-        ...experience,
-        endDate: experience.endDate ?? null,
-        challengeFaced: experience.challengeFaced ?? null,
-        outcome: experience.outcome ?? null,
-        organization: experience.organization ?? null,
-        applicationStatus: experience.applicationStatus ?? null,
-        achievements: experience.achievements ?? null,
-        isVerified: experience.isVerified ?? false,
-        proofs: experience.proofs.map((proof) => ({
-      ...proof,
-      verifiedAt: proof.verifiedAt ?? null,
-      reason: proof.reason ?? null,
-    })),
-    };
-}
 
 export interface SubmitJourneyResponse {
     goals: JourneyGoal[];
@@ -71,8 +50,7 @@ async function inferTransition(
 export async function submitJourney(
     userId: string,
     conversationId: string,
-    input: SubmitJourney,
-    proofFiles: Map<string, Express.Multer.File>
+    input: SubmitJourney
 ): Promise<SubmitJourneyResponse> {
     const validation = submitJourneySchema.safeParse(input);
     if (!validation.success) {
@@ -81,44 +59,34 @@ export async function submitJourney(
         );
     }
     const validJourney = validation.data;
-    const submittedExperiences = validJourney.experiences;
+    const experiences: JourneyExperience[] = validJourney.experiences.map(
+        ({ decisionReason, ...experience }) => {
+            const parsed = journeyExperienceSchema.safeParse({
+                ...experience,
+                endDate: experience.endDate ?? null,
+                challengeFaced: experience.challengeFaced ?? null,
+                outcome: experience.outcome ?? null,
+                organization: experience.organization ?? null,
+                applicationStatus: experience.applicationStatus ?? null,
+                achievements: experience.achievements ?? null,
+                isVerified: experience.isVerified ?? false,
+            });
+            if (!parsed.success) {
+                throw new Error(
+                    `Invalid experience: ${parsed.error.message}`
+                );
+            }
+            return parsed.data as JourneyExperience;
+        }
+    );
     const verifiedExperiences: JourneyExperience[] = [];
 
-    for (const experience of submittedExperiences) {
-        const verifiedProofs = await Promise.all(
-            experience.proofs.map((proof) =>
-                verifyProof(
-                    experience,
-                    proof,
-                    proofFiles.get(proof.id) ?? null
-                )
-            )
-        );
-
-        const parsed = journeyExperienceSchema.safeParse({
-            ...experience,
+    for (const experience of experiences) {
+        const verifiedProofs = await Promise.all(experience.proofs.map((proof) => verifyProof(experience, proof)));
+        verifiedExperiences.push({...experience,
             proofs: verifiedProofs,
-            isVerified: verifiedProofs.some(
-                (proof) => proof.status === "verified"
-            ),
-
-            endDate: experience.endDate ?? null,
-            challengeFaced: experience.challengeFaced ?? null,
-            outcome: experience.outcome ?? null,
-            organization: experience.organization ?? null,
-            applicationStatus: experience.applicationStatus ?? null,
-            achievements: experience.achievements ?? null,
+            isVerified: verifiedProofs.some((proof) => proof.status === "verified"),
         });
-
-        if (!parsed.success) {
-            throw new Error(
-                `Invalid experience: ${parsed.error.message}`
-            );
-        }
-
-        const normalized: JourneyExperience = normalizeJourneyExperience(parsed.data);
-
-        verifiedExperiences.push(normalized);
     }
 
     for (const exp of verifiedExperiences) {
@@ -137,7 +105,7 @@ export async function submitJourney(
         }
     }
 
-    const transitions = submittedExperiences.flatMap((experience) => {
+    const transitions = validJourney.experiences.flatMap((experience) => {
         const decisionReason = experience.decisionReason?.trim();
         if (!decisionReason) {
             return [];
@@ -172,15 +140,15 @@ export async function submitJourney(
     }
     const validatedTransitions: JourneyTransition[] = inferredTransitions.map(
         (transition) => {
-            const currentExperience = verifiedExperiences.find((experience) => experience.title === transition.currentTitle);
+            const currentExperience = experiences.find((experience) => experience.title === transition.currentTitle);
             if (!currentExperience) {
                 throw new Error(`Current experience "${transition.currentTitle}" not found.`);
             }
-            const previousExperience = verifiedExperiences.find((experience) => experience.title === transition.fromTitle);
+            const previousExperience = experiences.find((experience) => experience.title === transition.fromTitle);
             if (!previousExperience) {
                 throw new Error(`Previous experience "${transition.fromTitle}" not found.`);
             }
-            const decisionLabel = submittedExperiences.find(
+            const decisionLabel = validJourney.experiences.find(
                 (experience) => experience.title === transition.currentTitle)?.decisionReason;
             if (!decisionLabel) {
                 throw new Error(
