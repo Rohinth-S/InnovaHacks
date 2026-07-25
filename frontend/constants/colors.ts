@@ -10,6 +10,7 @@ export const BRAND_COLORS = {
   cream: '#FBFBF9',
   white: '#FFFFFF',
   lightGray: '#F1F5F9',
+  slateMuted: '#94A3B8',
   border: '#E2E8F0',
   // Dark theme
   dark: '#0F172A',
@@ -34,6 +35,7 @@ export const L = {
   terracottaTint: '#F5E4DD',
   sand:           '#D9C9A8',
   border:         '#EAE7E0',
+  gray:           '#4A5568'
 };
 
 export const EMOTION_COLORS: Record<string, { bg: string; text: string }> = {
