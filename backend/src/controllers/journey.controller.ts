@@ -63,10 +63,10 @@ export async function submitGoalController(
   res: Response
 ): Promise<void> {
   try {
-    const { goal } = req.body;
+    const goal = req.body.goal || (req.body.title || req.body.narrative ? req.body : null);
     if (!goal) {
       res.status(400).json({
-        error: "goal is required",
+        error: "goal details are required",
       });
       return;
     }
@@ -101,8 +101,17 @@ export async function submitJourneyController(
       });
       return;
     }
-    const result = await submitJourney(userId, conversationId, journeyPayload);
-    res.json({success: true,...result,});
+    const proofFile = req.file ?? null;
+    const result = await submitJourney(
+      userId,
+      conversationId,
+      { experiences: journeyPayload.experiences },
+      proofFile
+    );
+    res.json({
+      success: true,
+      ...result,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     res.status(500).json({error: message});

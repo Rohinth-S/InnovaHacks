@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const monthYearDateSchema = z
   .string()
-  .regex(/^[A-Za-z]{3} \d{4}$/, "Expected date in MMM YYYY format");
+  .regex(/^(0[1-9]|1[0-2]) \d{4}$/, "Expected date in MM YYYY format");
 
 const isoDateTimeSchema = z
   .string()
@@ -112,6 +112,14 @@ export const journeyProofSchema = z
   })
   .strict();
 
+export const submitProofSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    sourceType: proofSourceTypeSchema,
+    url: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
 export const journeyExperienceSchema = z
   .object({
     id: z.string().trim().min(1),
@@ -140,14 +148,25 @@ export const journeyTransitionSchema = z
   })
   .strict();
 
-export const submitGoalSchema = z.object({
-  narrative: z.string().trim().min(1),
-  topics: z.array(goalTopicSchema).min(1),
-  subtopics: z.array(goalSubtopicSchema).min(1),
-  status: goalStatusSchema,
-  startDate: monthYearDateSchema,
-  endDate: nullableDateSchema,
-});
+export const submitGoalSchema = z.union([
+  z.object({
+    narrative: z.string().trim().min(1),
+    topics: z.array(goalTopicSchema).min(1),
+    subtopics: z.array(goalSubtopicSchema).min(1),
+    status: goalStatusSchema,
+    startDate: monthYearDateSchema,
+    endDate: nullableDateSchema,
+  }),
+  z.object({
+    title: z.string().trim().min(1),
+    description: z.string().trim().optional(),
+    status: z.string().optional(),
+    topics: z.array(goalTopicSchema).optional(),
+    subtopics: z.array(goalSubtopicSchema).optional(),
+    startDate: monthYearDateSchema.optional(),
+    endDate: nullableDateSchema.optional(),
+  })
+]);
 
 export const submitExperienceSchema = z
   .object({
@@ -165,7 +184,7 @@ export const submitExperienceSchema = z
     skills: z.array(journeySkillSchema).default([]),
     decisionReason: z.string().trim().min(1).nullable().optional(),
     goalIds: z.array(z.string().uuid()),
-    proofs: z.array(journeyProofSchema),
+    proofs: z.array(submitProofSchema).optional().default([]),
     isVerified: z.boolean(),
   })
   .strict();
@@ -236,9 +255,11 @@ export const journeyJsonSchema = z
       }
     });
   });
-export type journeyGoalSchema=z.infer<typeof journeyGoalSchema>;
+export type journeyGoalSchema = z.infer<typeof journeyGoalSchema>;
 export type JourneyExperience = z.infer<typeof journeyExperienceSchema>;
 export type SubmitGoal = z.infer<typeof submitGoalSchema>;
 export type JourneyTransition = z.infer<typeof journeyTransitionSchema>;
 export type SubmitJourney = z.infer<typeof submitJourneySchema>;
 export type JourneyJson = z.infer<typeof journeyJsonSchema>;
+export type SubmitProof = z.infer<typeof submitProofSchema>;
+export type SubmitExperience = z.infer<typeof submitExperienceSchema>;

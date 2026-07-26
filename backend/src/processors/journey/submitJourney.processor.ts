@@ -16,6 +16,27 @@ import { validateExperienceDuplicate } from "./staticAnalysis/experienceDuplicat
 import { deleteJourneySession } from "../../services/journeySession.service.js";
 import { addExperienceReputation } from "../../services/reputation.service.js";
 import { verifyProof } from "./verifyProof.processor.js";
+import { z } from "zod";
+
+function normalizeJourneyExperience(
+    experience: z.infer<typeof journeyExperienceSchema>
+): JourneyExperience {
+    return {
+        ...experience,
+        endDate: experience.endDate ?? null,
+        challengeFaced: experience.challengeFaced ?? null,
+        outcome: experience.outcome ?? null,
+        organization: experience.organization ?? null,
+        applicationStatus: experience.applicationStatus ?? null,
+        achievements: experience.achievements ?? null,
+        isVerified: experience.isVerified ?? false,
+        proofs: experience.proofs.map((proof) => ({
+            ...proof,
+            verifiedAt: proof.verifiedAt ?? null,
+            reason: proof.reason ?? null,
+        })),
+    };
+}
 
 export interface SubmitJourneyResponse {
     goals: JourneyGoal[];
@@ -50,7 +71,8 @@ async function inferTransition(
 export async function submitJourney(
     userId: string,
     conversationId: string,
-    input: SubmitJourney
+    input: SubmitJourney,
+    proofFile: Express.Multer.File | null
 ): Promise<SubmitJourneyResponse> {
     const validation = submitJourneySchema.safeParse(input);
     if (!validation.success) {
@@ -59,34 +81,47 @@ export async function submitJourney(
         );
     }
     const validJourney = validation.data;
-    const experiences: JourneyExperience[] = validJourney.experiences.map(
-        ({ decisionReason, ...experience }) => {
-            const parsed = journeyExperienceSchema.safeParse({
-                ...experience,
-                endDate: experience.endDate ?? null,
-                challengeFaced: experience.challengeFaced ?? null,
-                outcome: experience.outcome ?? null,
-                organization: experience.organization ?? null,
-                applicationStatus: experience.applicationStatus ?? null,
-                achievements: experience.achievements ?? null,
-                isVerified: experience.isVerified ?? false,
-            });
-            if (!parsed.success) {
-                throw new Error(
-                    `Invalid experience: ${parsed.error.message}`
-                );
-            }
-            return parsed.data as JourneyExperience;
-        }
-    );
+    const submittedExperiences = validJourney.experiences;
     const verifiedExperiences: JourneyExperience[] = [];
 
-    for (const experience of experiences) {
-        const verifiedProofs = await Promise.all(experience.proofs.map((proof) => verifyProof(experience, proof)));
-        verifiedExperiences.push({...experience,
+    for (const experience of submittedExperiences) {
+        const verifiedProofs = await Promise.all(
+            experience.proofs.map((proof) =>
+                verifyProof(
+                    experience,
+                    proof,
+                    proofFile
+                )
+            )
+        );
+
+        const { decisionReason,
+            ...experienceWithoutDecisionReason } = experience;
+
+        const parsed = journeyExperienceSchema.safeParse({
+            ...experienceWithoutDecisionReason,
             proofs: verifiedProofs,
-            isVerified: verifiedProofs.some((proof) => proof.status === "verified"),
+            isVerified: verifiedProofs.some(
+                (proof) => proof.status === "verified"
+            ),
+
+            endDate: experience.endDate ?? null,
+            challengeFaced: experience.challengeFaced ?? null,
+            outcome: experience.outcome ?? null,
+            organization: experience.organization ?? null,
+            applicationStatus: experience.applicationStatus ?? null,
+            achievements: experience.achievements ?? null,
         });
+
+        if (!parsed.success) {
+            throw new Error(
+                `Invalid experience: ${parsed.error.message}`
+            );
+        }
+
+        const normalized: JourneyExperience = normalizeJourneyExperience(parsed.data);
+
+        verifiedExperiences.push(normalized);
     }
 
     for (const exp of verifiedExperiences) {
@@ -105,7 +140,7 @@ export async function submitJourney(
         }
     }
 
-    const transitions = validJourney.experiences.flatMap((experience) => {
+    const transitions = submittedExperiences.flatMap((experience) => {
         const decisionReason = experience.decisionReason?.trim();
         if (!decisionReason) {
             return [];
@@ -138,35 +173,50 @@ export async function submitJourney(
         const inferred = await inferTransition(candidates.current, candidates.top5);
         inferredTransitions.push(inferred);
     }
-    const validatedTransitions: JourneyTransition[] = inferredTransitions.map(
-        (transition) => {
-            const currentExperience = experiences.find((experience) => experience.title === transition.currentTitle);
-            if (!currentExperience) {
-                throw new Error(`Current experience "${transition.currentTitle}" not found.`);
-            }
-            const previousExperience = experiences.find((experience) => experience.title === transition.fromTitle);
-            if (!previousExperience) {
-                throw new Error(`Previous experience "${transition.fromTitle}" not found.`);
-            }
-            const decisionLabel = validJourney.experiences.find(
-                (experience) => experience.title === transition.currentTitle)?.decisionReason;
-            if (!decisionLabel) {
-                throw new Error(
-                    `Decision reason not found for "${transition.currentTitle}".`
-                );
-            }
-            const parsed = journeyTransitionSchema.safeParse({
-                fromExperienceId: previousExperience.id,
-                toExperienceId: currentExperience.id,
-                decisionLabel,
-            });
-            if (!parsed.success) {
-                throw new Error(
-                    `Invalid transition: ${parsed.error.message}`
-                );
-            }
-            return parsed.data;
+    const validatedTransitions = inferredTransitions
+    .map((transition): JourneyTransition | null => {
+        const currentExperience = verifiedExperiences.find(
+            (experience) => experience.title === transition.currentTitle
+        );
+        if (!currentExperience) {
+            console.warn(
+                `Skipping transition: current experience "${transition.currentTitle}" not found.`
+            );
+            return null;
         }
+        const previousExperience = verifiedExperiences.find(
+            (experience) => experience.title === transition.fromTitle
+        );
+        if (!previousExperience) {
+            console.warn(
+                `Skipping transition: previous experience "${transition.fromTitle}" not found.`
+            );
+            return null;
+        }
+        const decisionLabel = submittedExperiences.find(
+            (experience) => experience.title === transition.currentTitle
+        )?.decisionReason;
+        if (!decisionLabel) {
+            console.warn(
+                `Skipping transition: no decision reason for "${transition.currentTitle}".`
+            );
+            return null;
+        }
+        const parsed = journeyTransitionSchema.safeParse({
+            fromExperienceId: previousExperience.id,
+            toExperienceId: currentExperience.id,
+            decisionLabel,
+        });
+        if (!parsed.success) {
+            console.warn(
+                `Skipping invalid transition: ${parsed.error.message}`
+            );
+            return null;
+        }
+        return parsed.data;
+    })
+    .filter(
+        (t): t is JourneyTransition => t !== null
     );
     await createTransitions(validatedTransitions);
     const verifiedCount = verifiedExperiences.filter((experience) => experience.isVerified).length;
