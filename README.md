@@ -14,7 +14,6 @@ By structuring raw human experience into a verifiable, queryable **Life Graph**,
 
 ## ✦ Live Pitch & Deliverables
 
-* **Official Landing Page**: [Visit Website](https://path-finder-murex-six.vercel.app/)
 * **Web Client Preview**: [Launch Web App](https://path-finder-webapp.vercel.app)
 * **Android Client (APK)**: [Download APK File](https://fmqx14c5dhhkcis9.public.blob.vercel-storage.com/pathfinder.apk)
 * **Demo Video (YouTube)**: [Watch the PathFinder Pitch & Walkthrough](https://www.youtube.com/watch?v=cFn0jj-MVC8)
@@ -219,4 +218,4 @@ Read the following deep-dive manuals to understand, build, and deploy PathFinder
 | **Cloudinary** | Proof Asset Storage | Local File Storage | Cloudinary generates optimized thumbnails and secure CDN delivery URLs for images and PDFs submitted as verification evidence. |
 
 ---
-*Built with passion for HackHazards 2026.*
+*Built with passion for Innovahacks 2026.*
