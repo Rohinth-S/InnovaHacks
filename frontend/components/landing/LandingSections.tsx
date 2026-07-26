@@ -700,7 +700,7 @@ export function FooterSection() {
           {['PRIVACY', 'TERMS', 'GITHUB', 'CONTACT'].map((link, i) => {
             if (link === 'GITHUB') {
               return (
-                <TouchableOpacity key={i} onPress={() => Linking.openURL('https://github.com/mithulcrafts/PathFinder')}>
+                <TouchableOpacity key={i} onPress={() => Linking.openURL('https://github.com/Rohinth-S/InnovaHacks')}>
                   <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.50)', letterSpacing: 1, fontFamily: 'Manrope_600SemiBold', textDecorationLine: 'underline' }}>
                     {link}
                   </Text>
